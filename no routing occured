@@ -1,0 +1,86 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+
+np.random.seed(42)
+
+
+data_size = 1000
+time_of_day = np.random.randint(0, 24, size=data_size)  
+device_load = np.random.rand(data_size) * 100  
+latency = np.random.rand(data_size) * 50  
+traffic_volume = np.random.rand(data_size) * 1000  
+
+
+congestion = (time_of_day + device_load + latency) / 3 + np.random.rand(data_size) * 20
+
+
+df = pd.DataFrame({
+    'time_of_day': time_of_day,
+    'device_load': device_load,
+    'latency': latency,
+    'traffic_volume': traffic_volume,
+    'congestion': congestion
+})
+
+
+X = df[['time_of_day', 'device_load', 'latency', 'traffic_volume']]
+y = df['congestion']
+
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a Random Forest Regressor model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+
+y_pred = model.predict(X_test)
+
+
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+print(f"Mean Absolute Error: {mae}")
+print(f"Mean Squared Error: {mse}")
+
+
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, y_pred, color='blue', alpha=0.6)
+plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], color='red', linestyle='--')
+plt.title('Actual vs Predicted Network Congestion')
+plt.xlabel('Actual Congestion')
+plt.ylabel('Predicted Congestion')
+plt.show()
+
+
+def reroute_traffic(predicted_congestion):
+    congestion_threshold = 70.0  
+    if predicted_congestion > congestion_threshold:
+        print(f"Congestion predicted to be {predicted_congestion}%. Rerouting traffic...")
+        return "Rerouting to alternative path"
+    else:
+        print(f"Traffic on current path is optimal: {predicted_congestion}% congestion.")
+        return "No rerouting needed"
+
+
+def generate_traffic():
+    time_of_day = np.random.randint(0, 24)  
+    device_load = np.random.rand() * 100  
+    latency = np.random.rand() * 50  
+    traffic_volume = np.random.rand() * 1000  
+
+    
+    predicted_congestion = model.predict([[time_of_day, device_load, latency, traffic_volume]])[0]
+    return time_of_day, device_load, latency, traffic_volume, predicted_congestion
+
+
+for i in range(10):
+    time_of_day, device_load, latency, traffic_volume, predicted_congestion = generate_traffic()
+    print(f"Simulated Traffic {i+1}: Time of Day = {time_of_day} hours, Device Load = {device_load:.2f}%, Latency = {latency:.2f}ms, Traffic Volume = {traffic_volume:.2f} Mbps")
+    rerouting_action = reroute_traffic(predicted_congestion)
+    print(rerouting_action)
+    print("-" * 50)
